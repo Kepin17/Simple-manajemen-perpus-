@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+/* ============================================================
+   TOKEN: satu-satunya tempat warna, font, dan radius.
+   Ubah nilai di sini, semua halaman ikut berubah.
+   ============================================================ */
+:root {
+  --canvas: #f7f1e6; /* washi */
+  --surface: #fffaf1;
+  --ink: #241c17; /* sumi */
+  --muted: #5b4e44;
+  --line: #d9cbb5;
+  --accent: #1e3a5f; /* indigo ai */
+  --accent-ink: #fffaf1;
+  --gold: #8a5b12; /* kohaku, dipakai untuk ornamen */
+  --danger: #9a2a1d;
+  --success: #2f6b3a;
+  --radius: 1rem;
+  --face-display: var(--font-fraunces), Georgia, serif;
+  --face-sans: var(--font-jakarta), system-ui, sans-serif;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --canvas: #15120f;
+    --surface: #1f1a16;
+    --ink: #f2eadb;
+    --muted: #c4b8a6;
+    --line: #3d342b;
+    --accent: #9bbcdf;
+    --accent-ink: #15120f;
+    --gold: #d8a94f;
+    --danger: #ffab9c;
+    --success: #9fd6a6;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --canvas: #15120f;
+  --surface: #1f1a16;
+  --ink: #f2eadb;
+  --muted: #c4b8a6;
+  --line: #3d342b;
+  --accent: #9bbcdf;
+  --accent-ink: #15120f;
+  --gold: #d8a94f;
+  --danger: #ffab9c;
+  --success: #9fd6a6;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-gold: var(--gold);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --font-display: var(--face-display);
+  --font-sans: var(--face-sans);
+}
+
+@layer base {
+  html {
+    background-color: var(--canvas);
+  }
+  body {
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-family: var(--face-sans);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+/* ============================================================
+   ORNAMEN: SVG di public/ornament dipakai sebagai mask,
+   warnanya mengikuti token (--gold) dan tema terang/gelap.
+   ============================================================ */
+.ornament {
+  display: block;
+  background-color: var(--gold);
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+  pointer-events: none;
+}
+.orn-single {
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+.orn-seigaiha {
+  -webkit-mask-image: url(/ornament/seigaiha.svg);
+  mask-image: url(/ornament/seigaiha.svg);
+  -webkit-mask-size: 40px 20px;
+  mask-size: 40px 20px;
+}
+.orn-kawung {
+  -webkit-mask-image: url(/ornament/kawung.svg);
+  mask-image: url(/ornament/kawung.svg);
+  -webkit-mask-size: 80px 80px;
+  mask-size: 80px 80px;
+}
+.orn-parang {
+  -webkit-mask-image: url(/ornament/parang.svg);
+  mask-image: url(/ornament/parang.svg);
+  -webkit-mask-size: 40px 40px;
+  mask-size: 40px 40px;
+}
+.orn-asanoha {
+  -webkit-mask-image: url(/ornament/asanoha.svg);
+  mask-image: url(/ornament/asanoha.svg);
+  -webkit-mask-size: 60px 52px;
+  mask-size: 60px 52px;
+}
+.orn-megamendung {
+  -webkit-mask-image: url(/ornament/megamendung.svg);
+  mask-image: url(/ornament/megamendung.svg);
+  -webkit-mask-size: 60px 30px;
+  mask-size: 60px 30px;
+}
+.orn-sakura {
+  -webkit-mask-image: url(/ornament/sakura.svg);
+  mask-image: url(/ornament/sakura.svg);
+}
