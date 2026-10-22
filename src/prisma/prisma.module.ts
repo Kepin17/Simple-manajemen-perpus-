@@ -4,6 +4,6 @@ import { PrismaService } from './prisma.service';
 
 @Module({
   providers: [{ provide: ENV, useFactory: () => loadEnv() }, PrismaService],
-  exports: [PrismaService],
+  exports: [PrismaService, ENV],
 })
 export class PrismaModule {}

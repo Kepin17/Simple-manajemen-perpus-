@@ -23,4 +23,9 @@ export class LoansController {
   listByMember(@Query('memberId', ParseIntPipe) memberId: number) {
     return this.loans.listByMember(memberId);
   }
+
+  @Get('overdue')
+  listOverdue() {
+    return this.loans.listOverdue();
+  }
 }
