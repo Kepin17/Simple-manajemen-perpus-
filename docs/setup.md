@@ -38,6 +38,7 @@ Buka `.env` dan isi setiap variabel di bawah. Jangan commit `.env`. File ini sud
 | `TURNSTILE_SECRET_KEY` | Ya | Untuk development, pakai secret test Cloudflare `1x0000000000000000000000000000000AA` (selalu lolos). Server perlu akses internet ke `challenges.cloudflare.com` |
 | `DATABASE_URL` | Ya | URL PostgreSQL, format `postgresql://USER:PASSWORD@localhost:5432/NAMA_DATABASE` |
 | `LATE_FEE_PER_DAY` | Tidak | Denda per hari dalam rupiah. Kosong atau tidak ada = `1000`. Harus bilangan bulat tidak negatif. Aturan denda ada di [library.md](library.md#denda-keterlambatan) |
+| `OTP_ENABLED` | Tidak | `false` = login langsung memberi JWT tanpa langkah OTP (dipakai sementara di development). Kosong, tidak ada, atau nilai lain = `true`, login meminta OTP. Alur lengkap ada di [api.md](api.md#autentikasi) |
 
 Contoh membuat nilai secret. Tempel hasilnya ke `.env`, jangan ke chat atau commit:
 
@@ -78,7 +79,7 @@ curl -s http://localhost:3000/health
 {"status":"ok"}
 ```
 
-Log OTP muncul di terminal ini. Saat login, cari baris `OTP for <email>: <kode>`.
+Jika `OTP_ENABLED` tidak `false`, kode OTP muncul di terminal ini. Saat login, cari baris `OTP for <email>: <kode>`. Jika `OTP_ENABLED=false`, tidak ada OTP dan login langsung berhasil.
 
 ### 1.5 Test
 
@@ -123,10 +124,12 @@ Buka `http://localhost:3001`. Halaman yang belum login akan diarahkan ke `/masuk
 Script lain:
 
 ```bash
-bun run build   # build produksi
-bun run start   # menjalankan hasil build (setelah bun run build)
-bun run lint    # ESLint
+bun run build            # build produksi
+bun run start -- -p 3001 # menjalankan hasil build (setelah bun run build), pakai -p agar tidak bentrok dengan backend
+bun run lint             # ESLint
 ```
+
+Cookie sesi (`perpus_token`) bersifat `httpOnly`. Flag `Secure` hanya dipasang jika request datang lewat HTTPS (atau header `x-forwarded-proto: https`), bukan berdasarkan mode produksi. Karena itu aplikasi tetap bisa dipakai lewat `http://` di jaringan lokal. Di produksi, pasang HTTPS di depan aplikasi.
 
 Next.js membaca `web/.env.local` saat start. Setelah mengubah file ini, restart `bun run dev`.
 
@@ -135,8 +138,10 @@ Next.js membaca `web/.env.local` saat start. Setelah mengubah file ini, restart 
 Pastikan backend sudah berjalan di port 3000 (bagian 1.4), lalu:
 
 1. Buka `http://localhost:3001/daftar` dan buat akun. Password minimal 12 karakter.
-2. Buka `http://localhost:3001/masuk`, masukkan email dan password. Login hanya memeriksa email dan password, lalu mengirim OTP.
-3. Ambil kode OTP dari terminal backend, baris `OTP for <email>: <kode>`, lalu masukkan di halaman masuk. Cookie `perpus_token` (httpOnly) diset dan Anda masuk.
+2. Buka `http://localhost:3001/masuk`, masukkan email dan password.
+   - Jika `OTP_ENABLED=false`, Anda langsung masuk ke halaman tujuan (default katalog). Lanjut ke langkah 4.
+   - Jika OTP aktif, halaman meminta kode OTP. Lanjut ke langkah 3.
+3. Hanya jika OTP aktif: ambil kode OTP dari terminal backend, baris `OTP for <email>: <kode>`, lalu masukkan di halaman masuk. Cookie `perpus_token` (httpOnly) diset dan Anda masuk.
 4. Tambah buku dengan `POST /books` di [api.md](api.md#post-books).
 5. Tambah anggota dengan `POST /members` di [api.md](api.md#post-members). Aplikasi web belum punya halaman untuk ini. Catat `id` dari respons.
 6. Pinjam buku di `/pinjam/[id]`. Form memakai ID anggota secara manual, sesuai [known limitation](library.md#known-limitation).
@@ -151,6 +156,9 @@ Endpoint `POST /books` dan `POST /members` memakai JWT. Token web tersimpan di c
 | Login di web membalas `401` | `SIGNING_SECRET` di `web/.env.local` berbeda dengan root `.env` | Samakan nilainya, lalu restart `bun run dev` |
 | Web membalas `500` dengan `Konfigurasi server web belum lengkap` | `BACKEND_URL` atau `SIGNING_SECRET` di `web/.env.local` kosong | Isi variabelnya, lalu restart `bun run dev` |
 | Web membalas `502` dengan `Backend tidak dapat dihubungi` | Backend belum jalan, atau `BACKEND_URL` salah port | Jalankan backend, dan cek `BACKEND_URL` |
+| Login di web gagal dengan pesan error aneh (bukan `Invalid credentials`) | `BACKEND_URL` menunjuk ke port aplikasi web itu sendiri, misalnya web di 3000 dan `BACKEND_URL=http://localhost:3000` | Jalankan web dan backend di port berbeda, lalu samakan `BACKEND_URL` dengan port backend |
+| Setelah login halaman kembali ke `/masuk` | Cookie sesi tidak tersimpan. Pada versi lama, cookie diberi flag `Secure` di `http://` sehingga dibuang browser. Penyebab lain: akun hilang karena backend di-restart (akun disimpan di memori) | Perbarui ke commit terbaru dan restart web. Jika backend baru di-restart, daftar akun lagi di `/daftar` |
+| Login membalas `401 Invalid credentials` setelah backend di-restart | Akun auth disimpan di memori dan hilang saat restart | Daftar ulang di `/daftar` |
 | `Captcha verification failed` | `TURNSTILE_SECRET_KEY` bukan secret test, atau server tidak bisa mengakses Cloudflare | Pakai secret test untuk dev, dan cek koneksi internet |
 | Backend gagal start dengan `Missing env: ...` | Variabel wajib di `.env` kosong | Lengkapi variabel di [bagian 1.2](#12-isi-env) |
 | Backend gagal start dengan `LATE_FEE_PER_DAY must be a non-negative integer` | Nilai `LATE_FEE_PER_DAY` bukan bilangan bulat tidak negatif | Perbaiki nilainya, atau kosongkan untuk memakai default |

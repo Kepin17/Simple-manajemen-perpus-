@@ -1,6 +1,6 @@
 # API
 
-Daftar endpoint sesuai kode di `main` (commit `35bbca4`). Contoh request dan respons dijalankan terhadap server lokal pada 2026-10-22. Nilai `id`, `token`, dan waktu bersifat dinamis, jadi nilainya berbeda di setiap run. Struktur respons tetap sama.
+Daftar endpoint sesuai kode di `main` (commit `334a9f7`). Contoh request dan respons dijalankan terhadap server lokal pada 2026-10-22, termasuk alur login dengan dan tanpa OTP. Nilai `id`, `token`, dan waktu bersifat dinamis, jadi nilainya berbeda di setiap run. Struktur respons tetap sama.
 
 Asumsi: server berjalan di `http://localhost:3000` (default `PORT`). Cara menjalankan ada di [setup.md](setup.md).
 
@@ -11,8 +11,8 @@ Asumsi: server berjalan di `http://localhost:3000` (default `PORT`). Cara menjal
 | GET | `/health` | Tidak | Cek server hidup |
 | GET | `/version` | Tidak | Nama dan versi aplikasi |
 | POST | `/auth/register` | Tanda tangan | Daftar akun |
-| POST | `/auth/login` | Tanda tangan | Minta OTP |
-| POST | `/auth/otp/verify` | Tanda tangan | Tukar OTP dengan JWT |
+| POST | `/auth/login` | Tanda tangan | Login. Memberi JWT langsung jika `OTP_ENABLED=false`, atau meminta OTP |
+| POST | `/auth/otp/verify` | Tanda tangan | Tukar OTP dengan JWT (hanya dipakai jika OTP aktif) |
 | GET | `/auth/me` | JWT | Data akun yang sedang login |
 | GET | `/books` | JWT | Daftar semua buku |
 | POST | `/books` | JWT | Tambah buku |
@@ -52,11 +52,16 @@ curl -s http://localhost:3000/version
 
 ## Autentikasi
 
-Alur login memakai OTP dua langkah, lalu JWT. Token berlaku 15 menit (`expiresIn: 900`).
+Token JWT berlaku 15 menit (`expiresIn: 900`). Ada dua mode login, diatur lewat env `OTP_ENABLED` di backend:
+
+- **`OTP_ENABLED=false`** (dipakai sementara di development): `POST /auth/login` langsung membalas `accessToken`. Tidak ada langkah OTP.
+- **`OTP_ENABLED=true`** (default jika env kosong atau tidak ada): `POST /auth/login` membalas `challengeId` dan mengirim OTP, lalu `POST /auth/otp/verify` menukar OTP dengan `accessToken`.
+
+Langkah umum:
 
 1. `POST /auth/register` untuk membuat akun.
-2. `POST /auth/login` dengan email dan password. Server mengirim OTP. Di development, OTP hanya dicetak ke console server dengan format `OTP for <email>: <kode>`.
-3. `POST /auth/otp/verify` dengan `challengeId` dan kode OTP. Hasilnya `accessToken`.
+2. `POST /auth/login` dengan email dan password. Dengan OTP aktif, server mengirim OTP. Di development, OTP hanya dicetak ke console server dengan format `OTP for <email>: <kode>`.
+3. Hanya jika OTP aktif: `POST /auth/otp/verify` dengan `challengeId` dan kode OTP. Hasilnya `accessToken`.
 4. Pakai `accessToken` sebagai `Authorization: Bearer <accessToken>` di endpoint perpustakaan.
 
 ### Tanda tangan request (hanya endpoint auth)
@@ -132,14 +137,31 @@ Error:
 
 ### POST /auth/login
 
-Memeriksa email dan password, lalu mengirim OTP. Body sama dengan register. Respons `200`.
+Memeriksa email dan password. Body sama dengan register. Respons `200`, bentuknya bergantung pada `OTP_ENABLED`.
+
+Simpan respons ke variabel pada pemanggilan pertama. Setiap request bertanda tangan memakai nonce yang hanya berlaku sekali, jadi request yang sama tidak boleh dikirim ulang.
 
 ```bash
 LOGIN='{"email":"budi@example.com","password":"correct-horse-battery","captchaToken":"XXXX.DUMMY.TOKEN.XXXX"}'
 sign POST /auth/login "$LOGIN"
-curl -s -X POST http://localhost:3000/auth/login \
-  -H 'Content-Type: application/json' "${SIGH[@]}" -d "$LOGIN"
+RESP=$(curl -s -X POST http://localhost:3000/auth/login \
+  -H 'Content-Type: application/json' "${SIGH[@]}" -d "$LOGIN")
+echo "$RESP"
 ```
+
+**OTP nonaktif** (`OTP_ENABLED=false`): respons langsung berisi token.
+
+```json
+{"accessToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...","tokenType":"Bearer","expiresIn":900}
+```
+
+Ambil token dari `RESP`:
+
+```bash
+TOKEN=$(printf '%s' "$RESP" | sed -E 's/.*"accessToken":"([^"]+)".*/\1/')
+```
+
+**OTP aktif** (`OTP_ENABLED=true`): respons berisi `challengeId`, lalu lanjut ke [POST /auth/otp/verify](#post-authotpverify).
 
 ```json
 {"challengeId":"ZOTXHsfnEoehcT2Q_L4tNw"}
@@ -151,13 +173,18 @@ Error: `401` `{"message":"Invalid credentials",...}` jika email atau password sa
 
 ### POST /auth/otp/verify
 
+Hanya dipakai jika `OTP_ENABLED=true`. Jika OTP nonaktif, tidak ada challenge yang bisa diverifikasi, jadi endpoint ini selalu membalas `401`.
+
 Body: `challengeId` (string, maksimal 64 karakter) dan `code` (tepat 6 digit). OTP berlaku 5 menit, maksimal 5 percobaan, dan hanya bisa dipakai sekali. Contoh di bawah mengasumsikan `CH` berisi `challengeId` dan `CODE` berisi kode dari console.
+
+Simpan respons pada pemanggilan pertama. Kode OTP dan nonce hanya berlaku sekali, jadi mengirim ulang request yang sama menghasilkan `401`.
 
 ```bash
 OTP_BODY="{\"challengeId\":\"$CH\",\"code\":\"$CODE\"}"
 sign POST /auth/otp/verify "$OTP_BODY"
-curl -s -X POST http://localhost:3000/auth/otp/verify \
-  -H 'Content-Type: application/json' "${SIGH[@]}" -d "$OTP_BODY"
+RESP=$(curl -s -X POST http://localhost:3000/auth/otp/verify \
+  -H 'Content-Type: application/json' "${SIGH[@]}" -d "$OTP_BODY")
+echo "$RESP"
 ```
 
 Respons `200`:
@@ -168,12 +195,10 @@ Respons `200`:
 
 Error: `401` `{"message":"Invalid or expired code","error":"Unauthorized","statusCode":401}` jika kode salah, kedaluwarsa, atau percobaan habis.
 
-Simpan token ke variabel. Contoh di bawah memakai ekstraksi dengan `sed`:
+Ambil token dari `RESP` yang sudah disimpan:
 
 ```bash
-TOKEN=$(curl -s -X POST http://localhost:3000/auth/otp/verify \
-  -H 'Content-Type: application/json' "${SIGH[@]}" -d "$OTP_BODY" \
-  | sed -E 's/.*"accessToken":"([^"]+)".*/\1/')
+TOKEN=$(printf '%s' "$RESP" | sed -E 's/.*"accessToken":"([^"]+)".*/\1/')
 ```
 
 ### GET /auth/me

@@ -1,6 +1,6 @@
 # Perpustakaan
 
-Dokumen ini menjelaskan fitur perpustakaan sesuai kode di `main` (commit `35bbca4`): katalog buku, anggota, peminjaman, pengembalian, dan denda keterlambatan. Endpoint lengkap ada di [api.md](api.md). Cara menjalankan server dan aplikasi web ada di [setup.md](setup.md).
+Dokumen ini menjelaskan fitur perpustakaan sesuai kode di `main` (commit `334a9f7`): katalog buku, anggota, peminjaman, pengembalian, dan denda keterlambatan. Endpoint lengkap ada di [api.md](api.md). Cara menjalankan server dan aplikasi web ada di [setup.md](setup.md).
 
 ## Fitur
 
@@ -136,3 +136,4 @@ Aturan ini diuji di `src/loans/loans.service.spec.ts` (fungsi `calcLateFee` dan 
 - **`POST /loans` membalas 404 jika buku atau anggota tidak ada**, bukan `400` atau `422`. Client harus membedakan pesan `Book not found` dan `Member not found`.
 - **Satu anggota bisa meminjam buku yang sama berkali-kali** selama stok masih ada, dan tidak ada batas jumlah pinjaman aktif per anggota.
 - **OTP dicetak ke console.** Pengiriman OTP di `src/auth/console-otp.sender.ts` hanya untuk development dan melempar error jika `NODE_ENV=production`.
+- **OTP bisa dimatikan sementara.** Dengan `OTP_ENABLED=false` di `.env` backend, login langsung memberi JWT. Ini melemahkan keamanan login, jadi nyalakan lagi (hapus atau set `true`) dan ganti pengiriman OTP dengan email atau SMS sebelum produksi.
