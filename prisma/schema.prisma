@@ -23,6 +23,8 @@ model Member {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
+  // Format internasional tanpa '+', contoh 628123456789. Digit saja, dijaga CHECK di migrasi.
+  phone     String?  @unique
   loans     Loan[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -39,6 +41,8 @@ model Loan {
   borrowedAt DateTime  @default(now())
   dueAt      DateTime
   returnedAt DateTime?
+  // Denda keterlambatan dalam rupiah. Dihitung di aplikasi saat pengembalian.
+  lateFee    Int       @default(0)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
