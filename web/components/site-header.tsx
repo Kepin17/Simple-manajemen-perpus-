@@ -1,14 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Ornament } from "./ornament";
 import { ThemeToggle } from "./theme-toggle";
 import { api } from "@/lib/api";
 import { btnGhost } from "@/lib/ui";
 
+const AUTH_PAGES = ["/masuk", "/daftar"];
+
+// Menu Katalog aktif juga di halaman detail buku dan form pinjam.
+const NAV = [
+  { href: "/", label: "Katalog", match: (p: string) => p === "/" || p.startsWith("/buku") || p.startsWith("/pinjam") },
+  { href: "/keterlambatan", label: "Keterlambatan", match: (p: string) => p.startsWith("/keterlambatan") },
+];
+
 export function SiteHeader() {
   const router = useRouter();
+  const pathname = usePathname();
+  const isAuthPage = AUTH_PAGES.includes(pathname);
 
   async function logout() {
     await api("/auth/logout", { method: "POST" }).catch(() => null);
@@ -23,11 +33,26 @@ export function SiteHeader() {
           <Ornament kind="sakura" className="size-6 bg-gold" />
           Perpustakaan
         </Link>
+        {/* Belum login: menu dan tombol Keluar disembunyikan, hanya pilihan tema. */}
         <nav aria-label="Utama" className="flex flex-wrap items-center gap-1 text-sm">
-          <Link href="/" className="rounded-md px-3 py-2 text-ink hover:bg-surface">Katalog</Link>
-          <Link href="/keterlambatan" className="rounded-md px-3 py-2 text-ink hover:bg-surface">Keterlambatan</Link>
+          {!isAuthPage &&
+            NAV.map(({ href, label, match }) => {
+              const active = match(pathname);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={`rounded-md px-3 py-2 hover:bg-surface ${active ? "bg-surface font-semibold text-ink ring-1 ring-line" : "text-muted hover:text-ink"}`}
+                >
+                  {label}
+                </Link>
+              );
+            })}
           <ThemeToggle />
-          <button type="button" onClick={logout} className={`${btnGhost} px-3 py-1.5 text-sm`}>Keluar</button>
+          {!isAuthPage && (
+            <button type="button" onClick={logout} className={`${btnGhost} px-3 py-1.5 text-sm`}>Keluar</button>
+          )}
         </nav>
       </div>
     </header>

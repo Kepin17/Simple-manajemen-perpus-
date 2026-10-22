@@ -10,6 +10,7 @@
   --ink: #241c17; /* sumi */
   --muted: #5b4e44;
   --line: #d9cbb5;
+  --line-strong: #85735c; /* batas komponen input, kontras >= 3:1 */
   --accent: #1e3a5f; /* indigo ai */
   --accent-ink: #fffaf1;
   --gold: #8a5b12; /* kohaku, dipakai untuk ornamen */
@@ -28,6 +29,7 @@
     --ink: #f2eadb;
     --muted: #c4b8a6;
     --line: #3d342b;
+    --line-strong: #85796a;
     --accent: #9bbcdf;
     --accent-ink: #15120f;
     --gold: #d8a94f;
@@ -43,6 +45,7 @@
   --ink: #f2eadb;
   --muted: #c4b8a6;
   --line: #3d342b;
+  --line-strong: #85796a;
   --accent: #9bbcdf;
   --accent-ink: #15120f;
   --gold: #d8a94f;
@@ -57,6 +60,7 @@
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-gold: var(--gold);
