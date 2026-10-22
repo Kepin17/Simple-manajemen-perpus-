@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Book {
+  id              Int      @id @default(autoincrement())
+  title           String
+  author          String
+  isbn            String   @unique
+  totalCopies     Int
+  availableCopies Int
+  loans           Loan[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Member {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  loans     Loan[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Satu anggota boleh punya lebih dari satu Loan aktif untuk buku yang sama.
+// Tidak ada unique (bookId, memberId) by design; aturan ini diatur di aplikasi.
+model Loan {
+  id         Int       @id @default(autoincrement())
+  book       Book      @relation(fields: [bookId], references: [id])
+  bookId     Int
+  member     Member    @relation(fields: [memberId], references: [id])
+  memberId   Int
+  borrowedAt DateTime  @default(now())
+  dueAt      DateTime
+  returnedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([bookId])
+  @@index([memberId])
+}
