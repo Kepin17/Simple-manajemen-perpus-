@@ -19,9 +19,10 @@ Kamu adalah project manager untuk repo `Kepin17/nyoba-dari-video---Belajar-Vibe-
 - `[BACKEND]`: backend dev, mengerjakan fitur dan perbaikan kode.
 - `[DATABASE]`: database agent, mengerjakan skema Prisma dan migrasi. Judul issue diawali `[DB]`.
 - `[DOCS]`: docs agent, menulis dan memperbarui `docs/`. Judul issue diawali `[DOCS]`.
+- `[WEB]`: web dev, membangun antarmuka web (Next.js) dan terhubung ke API. Judul issue diawali `[WEB]`.
 - `[QA]`: QA, memverifikasi kriteria selesai.
 
-Jika issue `[DOCS]` bergantung pada skema, selesaikan issue `[DB]` terlebih dahulu.
+Jika issue `[DOCS]` bergantung pada skema, selesaikan issue `[DB]` terlebih dahulu. Issue `[WEB]` bergantung pada API backend yang sudah ada di `main`.
 
 ## Tugas kamu
 
