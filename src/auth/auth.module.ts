@@ -29,5 +29,6 @@ import { ConsoleOtpSender } from './console-otp.sender';
     SignatureGuard,
     JwtAuthGuard,
   ],
+  exports: [JwtModule, JwtAuthGuard],
 })
 export class AuthModule {}

@@ -5,11 +5,12 @@ export interface Env {
   encryptionKey: Buffer;
   signingSecret: string;
   turnstileSecret: string;
+  databaseUrl: string;
 }
 
 // Fail fast at boot: a missing secret must never fall back to a default.
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  const required = ['JWT_SECRET', 'ENCRYPTION_KEY', 'SIGNING_SECRET', 'TURNSTILE_SECRET_KEY'];
+  const required = ['JWT_SECRET', 'ENCRYPTION_KEY', 'SIGNING_SECRET', 'TURNSTILE_SECRET_KEY', 'DATABASE_URL'];
   const missing = required.filter((k) => !source[k]);
   if (missing.length) throw new Error(`Missing env: ${missing.join(', ')}`);
 
@@ -24,5 +25,6 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     encryptionKey,
     signingSecret: source.SIGNING_SECRET!,
     turnstileSecret: source.TURNSTILE_SECRET_KEY!,
+    databaseUrl: source.DATABASE_URL!,
   };
 }
