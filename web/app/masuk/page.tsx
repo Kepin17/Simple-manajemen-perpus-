@@ -28,8 +28,13 @@ export default function MasukPage() {
     if (!parsed.success) return setError(parsed.error.issues[0].message);
     setBusy(true);
     try {
-      const res = await api<{ challengeId: string }>("/auth/login", { method: "POST", body: parsed.data });
-      setChallengeId(res.challengeId);
+      const res = await api<{ challengeId?: string; ok?: boolean }>("/auth/login", { method: "POST", body: parsed.data });
+      // OTP nonaktif: cookie sudah terpasang oleh route login, langsung ke halaman tujuan.
+      if (res.ok) {
+        window.location.href = nextPath();
+        return;
+      }
+      setChallengeId(res.challengeId ?? null);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Terjadi kesalahan");
     } finally {

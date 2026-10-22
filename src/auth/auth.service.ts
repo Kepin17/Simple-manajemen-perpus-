@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { CaptchaService } from './captcha.service';
 import { OTP_SENDER, type OtpSender, OtpService } from './otp.service';
 import { UserRepository } from './user.repository';
+import { ENV, type Env } from '../config/env';
 
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 
@@ -17,6 +18,7 @@ export class AuthService {
     private captcha: CaptchaService,
     private jwt: JwtService,
     @Inject(OTP_SENDER) private sender: OtpSender,
+    @Inject(ENV) private env: Env,
   ) {}
 
   async register(email: string, password: string, captchaToken: string, ip?: string) {
@@ -34,17 +36,23 @@ export class AuthService {
     const valid = await Bun.password.verify(password, user?.passwordHash ?? (await this.dummyHash));
     if (!user || !valid) throw new UnauthorizedException('Invalid credentials');
 
+    if (!this.env.otpEnabled) return this.issueToken(user.id);
+
     const { challengeId, code } = this.otp.issue(user.id);
     await this.sender.send(this.users.emailOf(user), code);
     return { challengeId };
+  }
+
+  private async issueToken(userId: string) {
+    const accessToken = await this.jwt.signAsync({ sub: userId });
+    return { accessToken, tokenType: 'Bearer', expiresIn: ACCESS_TOKEN_TTL_SECONDS };
   }
 
   async verifyOtp(challengeId: string, code: string) {
     const userId = this.otp.verify(challengeId, code);
     if (!userId) throw new UnauthorizedException('Invalid or expired code');
 
-    const accessToken = await this.jwt.signAsync({ sub: userId });
-    return { accessToken, tokenType: 'Bearer', expiresIn: ACCESS_TOKEN_TTL_SECONDS };
+    return this.issueToken(userId);
   }
 
   me(userId: string) {

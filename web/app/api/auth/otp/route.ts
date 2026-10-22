@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { backend } from "@/lib/backend";
-import { TOKEN_COOKIE } from "@/lib/constants";
+import { setSessionCookie } from "@/lib/session";
 import { otpSchema } from "@/lib/schemas";
 
 // Langkah 2: tukar OTP dengan JWT. JWT hanya disimpan di cookie httpOnly, tidak dikirim ke browser.
@@ -13,12 +12,6 @@ export async function POST(req: Request) {
   const data = result.data as { accessToken?: string; expiresIn?: number } | null;
   if (!result.ok || !data?.accessToken) return NextResponse.json(result.data, { status: result.status });
 
-  (await cookies()).set(TOKEN_COOKIE, data.accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: data.expiresIn ?? 900,
-  });
+  await setSessionCookie(req, data.accessToken, data.expiresIn ?? 900);
   return NextResponse.json({ ok: true });
 }

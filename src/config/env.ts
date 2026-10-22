@@ -9,6 +9,7 @@ export interface Env {
   turnstileSecret: string;
   databaseUrl: string;
   lateFeePerDay: number;
+  otpEnabled: boolean;
 }
 
 // Fail fast at boot: a missing secret must never fall back to a default.
@@ -30,6 +31,9 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     throw new Error('LATE_FEE_PER_DAY must be a non-negative integer');
   }
 
+  // OTP_ENABLED=false: login langsung memberi JWT tanpa langkah OTP. Default true.
+  const otpEnabled = source.OTP_ENABLED?.trim().toLowerCase() !== 'false';
+
   return {
     jwtSecret,
     encryptionKey,
@@ -37,5 +41,6 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     turnstileSecret: source.TURNSTILE_SECRET_KEY!,
     databaseUrl: source.DATABASE_URL!,
     lateFeePerDay,
+    otpEnabled,
   };
 }
